@@ -9,7 +9,6 @@ pub struct Rabbit {
     conn: Connection,
     chan: lapin::Channel,
     q: lapin::Queue,
-    pub consumer: lapin::Consumer,
 }
 
 impl Rabbit {
@@ -57,6 +56,7 @@ impl Rabbit {
             "id".into(),
             AMQPValue::LongString(Uuid::new_v4().to_string().into()),
         );
+        bindings.insert("x-match".into(), AMQPValue::LongString("all".into()));
 
         let queue_opts = QueueDeclareOptions {
             durable: false,
@@ -72,22 +72,24 @@ impl Rabbit {
         chan.queue_bind(q, ex, "", QueueBindOptions::default(), bindings)
             .await?;
 
-        let consumer = chan
-            .clone()
-            .basic_consume(
-                q,
-                "my tag",
-                BasicConsumeOptions::default(),
-                FieldTable::default(),
-            )
-            .await?;
-
         Ok(Rabbit {
             conn,
             chan,
             q: queue,
-            consumer,
         })
+    }
+
+    pub async fn get_consumer(&self, tag: &str) -> Result<lapin::Consumer, String> {
+        self.chan
+            .clone()
+            .basic_consume(
+                self.q.name().as_str(),
+                tag,
+                BasicConsumeOptions::default(),
+                FieldTable::default(),
+            )
+            .await
+            .map_err(|e| format!("Failed to create rabbit consumer: {:?}", e))
     }
 }
 
