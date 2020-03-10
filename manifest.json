@@ -1,5 +1,5 @@
 {
-    "name": "com.example.rust_ext",
+    "name": "Rust native messaging example",
     "version": "1.0",
     "description": "Trigger Chrome APIs from Rust",
     "permissions": ["tabs", "nativeMessaging", "webRequest", "*://*/*"],
