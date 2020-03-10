@@ -23,12 +23,12 @@ async fn main() -> Result<(), String> {
     while res == Ok(()) {
         res = select!(
             (msg, stream) = fut1 => match msg {
-                    Some(Ok(message)) => {
-                        rabbit.publish(message.to_vec()).await?;
-                        Ok(fut1 = stream.into_future().fuse())
-                    },
-                    Some(Err(e)) => Err(format!("Error reading from browser: {}",e)),
-                    None => Err(String::from("Browser connection was shut down at source")),
+                Some(Ok(message)) => {
+                    rabbit.publish(message.to_vec()).await?;
+                    Ok(fut1 = stream.into_future().fuse())
+                },
+                Some(Err(e)) => Err(format!("Error reading from browser: {}",e)),
+                None => Err(String::from("Browser connection was shut down at source")),
             },
             (msg, consumer) = fut2 => match msg {
                 Some(Ok(delivery)) => {
