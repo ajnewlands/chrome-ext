@@ -5,21 +5,30 @@ use lapin::{
 };
 use uuid::Uuid;
 
+/// Represents an established rabbit bus connection and prebound queue.
 pub struct Rabbit {
     conn: Connection,
     chan: lapin::Channel,
     q: lapin::Queue,
+    id: uuid::Uuid,
 }
 
 impl Rabbit {
+    /// Dispatch a message to the rabbit bus with default headers
     pub async fn publish(&self, msg: Vec<u8>) -> Result<(), String> {
+        let mut headers = FieldTable::default();
+        headers.insert(
+            "from-id".into(),
+            AMQPValue::LongString(self.id.to_string().into()),
+        );
+
         self.chan
             .basic_publish(
                 "chrome-ext",
                 "",
                 BasicPublishOptions::default(),
                 msg,
-                BasicProperties::default(),
+                BasicProperties::default().with_headers(headers),
             )
             .await
             .map_err(|e| format!("Error publishing to rabbit: {}", e))?;
@@ -27,9 +36,10 @@ impl Rabbit {
         Ok(())
     }
 
+    /// Create a new rabbit bus connection, getting the AMQP connection string
+    /// either from the AMQP environment variable or else defaulting to localhost/guest.
     pub async fn new(ex: &str, q: &str) -> lapin::Result<Rabbit> {
-        let addr =
-            std::env::var("AMQP_ADDR").unwrap_or_else(|_| "amqp://127.0.0.1:5672/%2f".into());
+        let addr = std::env::var("AMQP").unwrap_or_else(|_| "amqp://127.0.0.1:5672/%2f".into());
 
         let conn = Connection::connect(&addr, ConnectionProperties::default()).await?;
         let chan = conn.create_channel().await?;
@@ -50,12 +60,10 @@ impl Rabbit {
         )
         .await?;
 
+        let id = Uuid::new_v4();
         let mut bindings = FieldTable::default();
         bindings.insert("service".into(), AMQPValue::LongString("chrome-ext".into()));
-        bindings.insert(
-            "id".into(),
-            AMQPValue::LongString(Uuid::new_v4().to_string().into()),
-        );
+        bindings.insert("id".into(), AMQPValue::LongString(id.to_string().into()));
         bindings.insert("x-match".into(), AMQPValue::LongString("all".into()));
 
         let queue_opts = QueueDeclareOptions {
@@ -76,9 +84,11 @@ impl Rabbit {
             conn,
             chan,
             q: queue,
+            id,
         })
     }
 
+    /// Return the consumer for our pre-built queue.
     pub async fn get_consumer(&self, tag: &str) -> Result<lapin::Consumer, String> {
         self.chan
             .clone()
@@ -93,6 +103,7 @@ impl Rabbit {
     }
 }
 
+/// Ensure that the channel and connection are closed when the Rabbit object goes out of scope.
 impl Drop for Rabbit {
     fn drop(&mut self) {
         block_on(self.chan.close(200, "client shut down")).unwrap();
