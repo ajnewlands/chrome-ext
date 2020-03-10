@@ -1,0 +1,11 @@
+{
+    "name": "com.example.rust_ext",
+    "version": "1.0",
+    "description": "Trigger Chrome APIs from Rust",
+    "permissions": ["tabs", "nativeMessaging", "webRequest", "*://*/*"],
+    "background": {
+      "scripts": ["background.js"],
+      "persistent": true
+    },
+    "manifest_version": 2
+  }

@@ -1,0 +1,9 @@
+{
+    "name": "com.example.rust_ext",
+    "description": "Rust Chrome-ext",
+    "path": "C:\\Users\\ajn\\source\\repos\\chrome-ext\\target\\debug\\chrome-ext.exe",
+    "type": "stdio",
+    "allowed_origins": [
+      "chrome-extension://poljkbdpmipggfnlkacnklgconikfaad/"
+    ]
+  }
