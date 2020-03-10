@@ -9,25 +9,24 @@ function go_to_url(url) {
     });
 }
 
+function post_nav_msg(mtype, url) {
+    let msg = {
+        type: mtype,
+        url: url,
+        time: performance.now()
+    };
+    port.postMessage(msg);
+}
+
 function event_loop() {
     console.log("Extension loaded");
 
     chrome.webRequest.onBeforeRequest.addListener(function (req) { 
-        let msg = {
-            type: "start",
-            url: req.url,
-            time: performance.now()
-        };
-        port.postMessage(msg);
+        post_nav_msg("start", req.url);
     }, { urls: ["*://*/*"]});
 
     chrome.webRequest.onCompleted.addListener(function(req) {
-        let msg = {
-            type: "end",
-            url: req.url,
-            time: performance.now()
-        };
-        port.postMessage(msg);
+        post_nav_msg("end", req.url);
     }, { urls: ["*://*/*"]})
 
     port.onMessage.addListener(function(msg) {
