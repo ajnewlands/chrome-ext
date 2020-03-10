@@ -1,4 +1,4 @@
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 use bytes::Bytes;
 use futures::prelude::*;
 use futures::{select, StreamExt};
@@ -40,36 +40,28 @@ async fn main() -> Result<(), String> {
         .fuse();
 
     let mut fut2 = rabbit.consumer.clone().into_future().fuse();
-    loop {
-        select!(
+
+    let mut res: Result<(), String> = Ok(());
+    while res == Ok(()) {
+        res = select!(
             (msg, stream) = fut1 => match msg {
                     Some(Ok(message)) => {
                         rabbit.publish(message.to_vec()).await?;
-                        fut1 = stream.into_future().fuse();
+                        Ok(fut1 = stream.into_future().fuse())
                     },
-                    Some(Err(e)) => println!("Error reading from browser: {}",e),
-                    None => println!("browser input stream closed"),
+                    Some(Err(e)) => Err(format!("Error reading from browser: {}",e)),
+                    None => Err(String::from("Browser connection was shut down at source")),
             },
             (msg, consumer) = fut2 => match msg {
-                Some(m) => match m {
-                    Ok(delivery) => { 
+                Some(Ok(delivery)) => {
                         println!("{:?}", delivery);
-                        println!("Consumer state: {:?}", consumer);
-                        fut2 = consumer.into_future().fuse();
-                    },
-                    Err(e) => {
-                        println!("Rabbit error: {:?}", e);
-                        break;
-                    },
+                        Ok(fut2 = consumer.into_future().fuse())
                 },
-                None => {
-                    println!("Rabbit connection was dropped");
-                    break;
-                },
+                Some(Err(e)) => Err(format!("Rabbit error: {:?}", e)),
+                None => Err(String::from("Rabbit connection was shut down at source")),
             },
-            complete => break,
         );
     }
 
-    Ok(())
+    res
 }
