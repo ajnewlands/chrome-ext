@@ -37,7 +37,7 @@ function event_loop() {
                     go_to_url(encodeURI(msg.url));
                     break;
                 default:
-                    console.log("Received unhandle message type: " + msg.type);
+                    console.log("Received unhandled message type: " + msg.type);
             }
         } else {
             console.log("Received" + JSON.stringify(msg));
