@@ -3,6 +3,8 @@ use bytes::Bytes;
 use futures::prelude::*;
 use futures::{select, StreamExt};
 use futures_util::sink::SinkExt;
+use uuid::Uuid;
+
 mod browser;
 mod rabbit;
 
@@ -12,7 +14,8 @@ async fn main() -> Result<(), String> {
 
     let mut browser_writer = browser::writer(tokio::io::stdout());
 
-    let rabbit = rabbit::Rabbit::new("chrome-ext", "chrome-ext")
+    let id = Uuid::new_v4().to_string();
+    let rabbit = rabbit::Rabbit::new("chrome-ext", &id)
         .await
         .map_err(|e| format!("Failed to initialize rabbit: {:?}", e))?;
 

@@ -3,14 +3,12 @@ use lapin::{
     options::*, types::AMQPValue, types::FieldTable, BasicProperties, Connection,
     ConnectionProperties, ExchangeKind,
 };
-use uuid::Uuid;
 
 /// Represents an established rabbit bus connection and prebound queue.
 pub struct Rabbit {
     conn: Connection,
     chan: lapin::Channel,
     q: lapin::Queue,
-    id: uuid::Uuid,
 }
 
 impl Rabbit {
@@ -19,7 +17,7 @@ impl Rabbit {
         let mut headers = FieldTable::default();
         headers.insert(
             "from-id".into(),
-            AMQPValue::LongString(self.id.to_string().into()),
+            AMQPValue::LongString(self.q.name().to_string().into()),
         );
 
         self.chan
@@ -60,10 +58,9 @@ impl Rabbit {
         )
         .await?;
 
-        let id = Uuid::new_v4();
         let mut bindings = FieldTable::default();
         bindings.insert("service".into(), AMQPValue::LongString("chrome-ext".into()));
-        bindings.insert("id".into(), AMQPValue::LongString(id.to_string().into()));
+        bindings.insert("id".into(), AMQPValue::LongString(q.into()));
         bindings.insert("x-match".into(), AMQPValue::LongString("all".into()));
 
         let queue_opts = QueueDeclareOptions {
@@ -83,8 +80,7 @@ impl Rabbit {
         Ok(Rabbit {
             conn,
             chan,
-            q: queue,
-            id,
+            q: queue
         })
     }
 
