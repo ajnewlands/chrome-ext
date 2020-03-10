@@ -38,6 +38,8 @@ At this point it's possible to load the extension by going to chrome://extension
 
 If successful, our extension will appear as a new panel in the list of extensions. Aside from a name, version number and description, you will note that an ID has been generated. We'll need this later to configure native messaging.
 
+![extension manifest successfully loaded](https://github.com/ajnewlands/chrome-ext/blob/master/images/chrome-extensions.PNG)
+
 ## Create the background script
 
 The extensions manifest file referenced a script called [background.js](https://github.com/ajnewlands/chrome-ext/blob/master/background.js) so we had better create it before going much further.
@@ -230,6 +232,8 @@ As messages are received from the bus (with the required headers, "service" and 
 
 To demonstrate our browser telemetry in action, we'll create a "go_to_url" message and send it to the bus using the RabbitMQ management interface, remembering to add the required "service" and "id" headers; the "id" value can be seen by examing the available queues (or their bindings).
 
+![Creating a go_to_url message from the management interface](https://github.com/ajnewlands/chrome-ext/blob/master/images/rabbit-go_to_url.PNG)
+
 The message content is an instance of the simple "go_to_url" instruction defined earlier in [background.js](https://github.com/ajnewlands/chrome-ext/blob/master/background.js), i.e.;
 
 ```rust
@@ -242,19 +246,16 @@ The message content is an instance of the simple "go_to_url" instruction defined
 Two things should happen; the active browser tab should navigate to https://www.rust-lang.org and a large number of messages of the following format should be dispatched to the chrome-ext exchange, representing each of the resources included in that web page:
 
 ```json
-{'from-id': 'b374cda2-6fb6-4bb7-b5c5-7d2686ba6435'}
 {
   "type": "end",
   "url": "https://www.rust-lang.org/static/fonts/woff2/FiraSans-Regular.latin.woff2",
   "time": 358798.73000000045
 }
-{'from-id': 'b374cda2-6fb6-4bb7-b5c5-7d2686ba6435'}
 {
   "type": "start",
   "url": "https://www.rust-lang.org/static/images/site.webmanifest?v=ngJW8jGAmR",
   "time": 358991.2750000003
 }
-{'from-id': 'b374cda2-6fb6-4bb7-b5c5-7d2686ba6435'}
 {
   "type": "end",
   "url": "https://www.rust-lang.org/static/images/site.webmanifest?v=ngJW8jGAmR",
