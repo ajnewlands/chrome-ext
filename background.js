@@ -1,5 +1,5 @@
 // See allowed characters at https://developer.chrome.com/apps/nativeMessaging
-var port = chrome.runtime.connectNative('com.example.rust_ext');
+var port = chrome.runtime.connectNative('com.example.chrome_ext');
 
 function go_to_url(url) {
     console.log("got a navigate instruction");
